@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--
+============================================================
+  RESULT PAGE - Mobile Price Prediction System
+============================================================
+  Displays the fuzzy logic prediction result including:
+    - Predicted price category
+    - Confidence level (animated ring)
+    - Suggested price range
+    - Input specifications summary
+    - PDF export and history options
+============================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Prediction result for mobile phone price category.">
+    <title>Result | Mobile Price Prediction</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-mobile-alt me-2"></i>PricePredict AI</a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <i class="fas fa-bars" style="color: var(--text-primary);"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/predict"><i class="fas fa-search-dollar me-1"></i> Predict</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/deals"><i class="fas fa-tags me-1"></i> Deals &amp; Refurbished</a></li>
+                </ul>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark</button>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ===== RESULT SECTION ===== -->
+    <section class="result-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <!-- Exportable Area -->
+                    <div id="resultExportArea">
+
+                        {% set cat = prediction.category %}
+                        {% if cat == 'Budget Phone' %}
+                            {% set cat_class = 'cat-budget' %}
+                            {% set cat_bg = 'bg-cat-budget' %}
+                            {% set cat_icon = 'fa-tag' %}
+                        {% elif cat == 'Mid-Range Phone' %}
+                            {% set cat_class = 'cat-midrange' %}
+                            {% set cat_bg = 'bg-cat-midrange' %}
+                            {% set cat_icon = 'fa-mobile-alt' %}
+                        {% elif cat == 'Premium Phone' %}
+                            {% set cat_class = 'cat-premium' %}
+                            {% set cat_bg = 'bg-cat-premium' %}
+                            {% set cat_icon = 'fa-star' %}
+                        {% else %}
+                            {% set cat_class = 'cat-flagship' %}
+                            {% set cat_bg = 'bg-cat-flagship' %}
+                            {% set cat_icon = 'fa-crown' %}
+                        {% endif %}
+
+                        <!-- Main Result Card -->
+                        <div class="result-card-main fade-in-up {{ cat_bg }}">
+
+                            <!-- Category Icon -->
+                            <div class="icon-circle mx-auto" style="width:70px; height:70px; font-size:1.8rem;">
+                                <i class="fas {{ cat_icon }} {{ cat_class }}"></i>
+                            </div>
+
+                            <!-- Category Name -->
+                            <h2 class="result-category {{ cat_class }}">
+                                {{ prediction.category }}
+                            </h2>
+
+                            <!-- Price Range -->
+                            <p class="result-price-range">
+                                <i class="fas fa-rupee-sign me-1"></i>
+                                Estimated Price: <strong>{{ prediction.price_range }}</strong>
+                            </p>
+
+                            <!-- Confidence Ring -->
+                            <div class="confidence-ring">
+                                <svg viewBox="0 0 160 160">
+                                    <circle class="bg-circle" cx="80" cy="80" r="70"></circle>
+                                    <circle class="progress-circle" id="progressCircle" cx="80" cy="80" r="70"></circle>
+                                </svg>
+                                <div class="confidence-value {{ cat_class }}" id="confidenceValue"
+                                     data-confidence="{{ prediction.confidence }}">
+                                    {{ prediction.confidence }}%
+                                </div>
+                            </div>
+                            <p class="text-muted-custom" style="font-size:0.85rem;">Confidence Level</p>
+
+                            <!-- Specs Summary -->
+                            <div class="specs-table">
+                                <h6 style="font-weight:700; margin-bottom:0.75rem;">
+                                    <i class="fas fa-list-ul me-1"></i> Input Specifications
+                                </h6>
+                                <table>
+                                    {% for key, value in prediction.inputs.items() %}
+                                    <tr>
+                                        <td>{{ key }}</td>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+
+                            <!-- Timestamp -->
+                            <p class="mt-3" style="font-size:0.75rem; color: var(--text-muted);">
+                                <i class="fas fa-clock me-1"></i> {{ prediction.timestamp }}
+                            </p>
+                        </div>
+
+                        <!-- Best Available Deals Card -->
+                        {% if prediction.deals %}
+                        <div class="result-deals-card card-custom mt-4 fade-in-up delay-1">
+                            <h4 class="mb-4 text-start"><i class="fas fa-shopping-cart me-2 gradient-text"></i>Best Deals &amp; Retailer Pricing</h4>
+                            <div class="row g-3">
+                                {% for deal in prediction.deals %}
+                                <div class="col-md-6 col-12">
+                                    <div class="deal-card d-flex align-items-center justify-content-between p-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="deal-logo-circle me-3" style="background-color: {{ deal.color }}15; border: 1px solid {{ deal.color }}40;">
+                                                {% if 'amazon' in deal.site %}
+                                                <i class="fab fa-amazon" style="color: {{ deal.color }};"></i>
+                                                {% else %}
+                                                <i class="fas fa-shopping-bag" style="color: {{ deal.color }};"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-start">
+                                                <div class="deal-variant text-muted-custom" style="font-size: 0.85rem;">{{ deal.variant }}</div>
+                                                <div class="deal-site-name" style="font-size: 1rem; font-weight: 600;">{{ deal.site }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-end d-flex align-items-center gap-3">
+                                            <div class="deal-price" style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary);">{{ deal.price }}</div>
+                                            {% if 'amazon' in deal.site %}
+                                            <a href="{{ deal.link }}" target="_blank" class="btn btn-sm deal-btn deal-btn-amazon">
+                                                Shop <i class="fas fa-external-link-alt ms-1" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                            {% else %}
+                                            <a href="{{ deal.link }}" target="_blank" class="btn btn-sm deal-btn deal-btn-flipkart">
+                                                Shop <i class="fas fa-external-link-alt ms-1" style="font-size: 0.7rem;"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Similarly Priced Competitors Card -->
+                        {% if prediction.competitors %}
+                        <div class="result-competitors-card card-custom mt-4 fade-in-up delay-2">
+                            <h4 class="mb-4 text-start"><i class="fas fa-balance-scale me-2 gradient-text"></i>Similarly Priced Competitors</h4>
+                            <div class="row g-3">
+                                {% for competitor in prediction.competitors %}
+                                <div class="col-xl-3 col-md-6 col-6">
+                                    <div class="competitor-card p-3 text-center">
+                                        <div class="competitor-icon-circle mx-auto mb-2" style="background-color: {{ competitor.color }}15; border: 1px solid {{ competitor.color }}40;">
+                                            <i class="fas {{ competitor.icon }}" style="color: {{ competitor.color }}"></i>
+                                        </div>
+                                        <div class="competitor-name" style="font-size: 0.95rem; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;" title="{{ competitor.name }}">{{ competitor.name }}</div>
+                                        <div class="competitor-price mt-1" style="font-size: 1.1rem; font-weight: 700; color: var(--accent-1);">{{ competitor.price }}</div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div><!-- end exportable area -->
+
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-3 justify-content-center flex-wrap mt-4 fade-in-up delay-2">
+                        <a href="/predict" class="btn-gradient" id="predictAgain">
+                            <i class="fas fa-redo"></i> Predict Again
+                        </a>
+                        <button class="btn-outline-custom" onclick="exportPDF()" id="exportPdfBtn">
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                        <button class="btn-outline-custom" data-bs-toggle="modal" data-bs-target="#historyModal" onclick="loadHistory()" id="viewHistoryBtn">
+                            <i class="fas fa-history"></i> History
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ===== HISTORY MODAL ===== -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content" style="border-radius: var(--radius-lg); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border-color);">
+                    <h5 class="modal-title" id="historyModalLabel">
+                        <i class="fas fa-history me-2 gradient-text"></i>
+                        <span class="gradient-text">Prediction History</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="historyContainer">
+                    <!-- History items loaded via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer-custom">
+        <div class="container">
+            <p class="mb-1"><i class="fas fa-mobile-alt me-1"></i><strong>Mobile Price Prediction System</strong> — BCA Mini Project</p>
+            <p class="mb-0">Built with <i class="fas fa-heart" style="color: #ef4444;"></i> using Python, Flask &amp; Fuzzy Logic</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- html2pdf.js for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

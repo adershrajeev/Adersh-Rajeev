@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<!--
+============================================================
+  PREDICTION PAGE - Mobile Price Prediction System
+============================================================
+  This page contains the form where users enter mobile
+  specifications. On submission, data is sent to Flask
+  backend which runs the Fuzzy Inference System.
+============================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Enter mobile phone specifications to predict price category using Fuzzy Logic.">
+    <title>Predict Price | Mobile Price Prediction</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ===== NAVIGATION ===== -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-mobile-alt me-2"></i>PricePredict AI</a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <i class="fas fa-bars" style="color: var(--text-primary);"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/predict"><i class="fas fa-search-dollar me-1"></i> Predict</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/deals"><i class="fas fa-tags me-1"></i> Deals &amp; Refurbished</a></li>
+                </ul>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark</button>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="loader-overlay" id="loaderOverlay">
+        <div class="text-center">
+            <div class="loader-spinner"></div>
+            <p class="loader-text">Analyzing with Fuzzy Logic...</p>
+        </div>
+    </div>
+
+
+    <!-- ===== FLASH MESSAGES ===== -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-custom alert-{{ category }}-custom alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+
+    <!-- ===== PREDICTION FORM ===== -->
+    <section class="predict-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+
+                    <!-- Page Header -->
+                    <div class="text-center mb-4 fade-in-up">
+                        <h1 class="gradient-text" style="font-size:2rem; font-weight:800;">
+                            <i class="fas fa-search-dollar me-2"></i>Price Prediction
+                        </h1>
+                        <p class="text-muted-custom">Enter your mobile phone's specifications below and let the Fuzzy Logic engine predict its price category.</p>
+                    </div>
+
+                    <!-- Form Card Grid -->
+                    <div class="fade-in-up delay-1">
+                        <form method="POST" action="/predict" onsubmit="return showLoader()" id="predictForm">
+
+                            <div class="row g-4">
+
+                                <!-- CARD 1: General & Brand -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-award me-2" style="color:var(--accent-1);"></i>General &amp; Brand</h5>
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="brand_level">
+                                                        Brand Type
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Brand tier: Budget (Xiaomi, Realme), Mid-Tier (Samsung, Vivo), Premium (Apple, OnePlus)."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="brand_level" name="brand_level" required>
+                                                        <option value="1">Budget Brand (Xiaomi, Realme)</option>
+                                                        <option value="2" selected>Mid-Tier Brand (Samsung, Vivo)</option>
+                                                        <option value="3">Premium Brand (Apple, OnePlus)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="has_5g">
+                                                        5G Support
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Does the phone support 5G network connectivity?"></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="has_5g" name="has_5g" required>
+                                                        <option value="0">No</option>
+                                                        <option value="1" selected>Yes</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="release_year">
+                                                        Release Year
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Year the mobile phone was launched. Range: 2020-2026."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="release_year" name="release_year" required>
+                                                        <option value="2020">2020</option>
+                                                        <option value="2021">2021</option>
+                                                        <option value="2022">2022</option>
+                                                        <option value="2023">2023</option>
+                                                        <option value="2024">2024</option>
+                                                        <option value="2025" selected>2025</option>
+                                                        <option value="2026">2026</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CARD 2: Performance & Hardware -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-microchip me-2" style="color:var(--accent-2);"></i>Performance &amp; Hardware</h5>
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="ram">
+                                                        RAM (GB)
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="RAM capacity. Range: 1-18 GB."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="ram" name="ram" min="1" max="18" step="1" value="6" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="storage">
+                                                        Storage (GB)
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Internal storage capacity."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="storage" name="storage" required>
+                                                        <option value="32">32 GB</option>
+                                                        <option value="64">64 GB</option>
+                                                        <option value="128" selected>128 GB</option>
+                                                        <option value="256">256 GB</option>
+                                                        <option value="512">512 GB</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="processor_speed">
+                                                        Processor (GHz)
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Processor clock speed in GHz. Range: 1.0 - 4.0 GHz."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="processor_speed" name="processor_speed" min="1.0" max="4.0" step="0.1" value="2.4" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="cpu_cores">
+                                                        CPU Cores
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Number of processor cores."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="cpu_cores" name="cpu_cores" required>
+                                                        <option value="4">Quad-Core (4)</option>
+                                                        <option value="6">Hexa-Core (6)</option>
+                                                        <option value="8" selected>Octa-Core (8)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CARD 3: Display Specs -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-expand me-2" style="color:var(--accent-3);"></i>Display Specs</h5>
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="screen_size">
+                                                        Screen Size (in)
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Screen diagonal size in inches. Range: 4.0 - 8.0."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="screen_size" name="screen_size" min="4.0" max="8.0" step="0.1" value="6.4" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="refresh_rate">
+                                                        Refresh Rate
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Screen refresh rate."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="refresh_rate" name="refresh_rate" required>
+                                                        <option value="60">60 Hz</option>
+                                                        <option value="90" selected>90 Hz</option>
+                                                        <option value="120">120 Hz</option>
+                                                        <option value="144">144 Hz</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="display_type">
+                                                        Panel Type
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Display panel technology."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="display_type" name="display_type" required>
+                                                        <option value="IPS LCD">IPS LCD</option>
+                                                        <option value="AMOLED" selected>AMOLED</option>
+                                                        <option value="OLED">OLED</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="display_resolution">
+                                                        Resolution
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Display resolution tier."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="display_resolution" name="display_resolution" required>
+                                                        <option value="HD+">HD+ (720p)</option>
+                                                        <option value="Full HD+" selected>Full HD+ (1080p)</option>
+                                                        <option value="Quad HD+">Quad HD+ (1440p+)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CARD 4: Camera Setup -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-camera me-2" style="color:var(--accent-1);"></i>Camera Setup</h5>
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="rear_camera_mp">
+                                                        Rear Camera
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Main camera resolution. Range: 5-200 MP."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="rear_camera_mp" name="rear_camera_mp" min="5" max="200" step="1" value="48" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="front_camera_mp">
+                                                        Front Camera
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Selfie camera resolution. Range: 5-64 MP."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="front_camera_mp" name="front_camera_mp" min="5" max="64" step="1" value="16" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-12">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="camera_setup">
+                                                        Camera Config
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Rear camera array configuration."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="camera_setup" name="camera_setup" required>
+                                                        <option value="Single Camera">Single Camera</option>
+                                                        <option value="Dual Camera">Dual Camera Setup</option>
+                                                        <option value="Triple Camera" selected>Triple Camera Setup</option>
+                                                        <option value="Quad Camera">Quad Camera Setup</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CARD 5: Battery & Power -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-battery-full me-2" style="color:var(--accent-2);"></i>Battery &amp; Power</h5>
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="battery_power">
+                                                        Capacity (mAh)
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Battery capacity. Range: 2000-7000 mAh."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="battery_power" name="battery_power" min="2000" max="7000" step="100" value="4500" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="charging_speed">
+                                                        Charging Speed
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Wired charging wattage. Range: 5-240 W."></i>
+                                                    </label>
+                                                    <input type="number" class="form-control-custom" id="charging_speed" name="charging_speed" min="5" max="240" step="1" value="33" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="wireless_charging">
+                                                        Wireless Charge
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Does the phone support wireless inductive charging?"></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="wireless_charging" name="wireless_charging" required>
+                                                        <option value="0" selected>No</option>
+                                                        <option value="1">Yes</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CARD 6: Connectivity & Features -->
+                                <div class="col-md-6">
+                                    <div class="chart-card h-100">
+                                        <h5 class="mb-4 text-start"><i class="fas fa-fingerprint me-2" style="color:var(--accent-3);"></i>Features &amp; Sensors</h5>
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="water_resistance">
+                                                        IP Rating
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Water/dust ingress protection rating."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="water_resistance" name="water_resistance" required>
+                                                        <option value="None" selected>None / Splash-Only</option>
+                                                        <option value="IP53">IP53 (Dust/Splash)</option>
+                                                        <option value="IP67">IP67 (Submersible)</option>
+                                                        <option value="IP68">IP68 (Submersible Premium)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="fingerprint_sensor">
+                                                        Fingerprint Sensor
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Biometric fingerprint unlock scanner location."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="fingerprint_sensor" name="fingerprint_sensor" required>
+                                                        <option value="None">None</option>
+                                                        <option value="Rear-Mounted">Rear-Mounted</option>
+                                                        <option value="Side-Mounted" selected>Side-Mounted (Power Key)</option>
+                                                        <option value="Under-Display">Under-Display Scanner</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="nfc_support">
+                                                        NFC Support
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Near Field Communication for contactless payments."></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="nfc_support" name="nfc_support" required>
+                                                        <option value="0">No</option>
+                                                        <option value="1" selected>Yes</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group-custom text-start">
+                                                    <label class="form-label-custom" for="audio_jack">
+                                                        3.5mm Jack
+                                                        <i class="fas fa-info-circle tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top" title="Does the phone have a standard 3.5mm wired headphone jack?"></i>
+                                                    </label>
+                                                    <select class="form-control-custom" id="audio_jack" name="audio_jack" required>
+                                                        <option value="0">No</option>
+                                                        <option value="1" selected>Yes</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Divider -->
+                            <div class="divider"></div>
+
+                            <!-- Submit Buttons -->
+                            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                <button type="submit" class="btn-gradient" id="predictBtn">
+                                    <i class="fas fa-magic"></i> Predict Price Category
+                                </button>
+                                <button type="reset" class="btn-outline-custom" id="resetBtn">
+                                    <i class="fas fa-redo"></i> Reset Form
+                                </button>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- Quick Presets -->
+                    <div class="mt-4 text-center fade-in-up delay-3">
+                        <p class="text-muted-custom mb-2"><small><i class="fas fa-lightbulb me-1"></i> Quick Presets — Click to auto-fill</small></p>
+                        <div class="d-flex gap-2 justify-content-center flex-wrap">
+                            <button class="badge-custom" style="cursor:pointer; border:none;" onclick="fillPreset('budget')">Budget Phone</button>
+                            <button class="badge-custom" style="cursor:pointer; border:none;" onclick="fillPreset('midrange')">Mid-Range</button>
+                            <button class="badge-custom" style="cursor:pointer; border:none;" onclick="fillPreset('premium')">Premium</button>
+                            <button class="badge-custom" style="cursor:pointer; border:none;" onclick="fillPreset('flagship')">Flagship</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer-custom">
+        <div class="container">
+            <p class="mb-1"><i class="fas fa-mobile-alt me-1"></i><strong>Mobile Price Prediction System</strong> — BCA Mini Project</p>
+            <p class="mb-0">Built with <i class="fas fa-heart" style="color: #ef4444;"></i> using Python, Flask &amp; Fuzzy Logic</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Preset auto-fill function -->
+    <script>
+        /**
+         * Fill the form with preset values for quick testing.
+         * Useful during viva demonstrations.
+         */
+        function fillPreset(type) {
+            const presets = {
+                budget: {
+                    brand_level: '1',
+                    has_5g: '0',
+                    release_year: '2023',
+                    ram: 3,
+                    storage: '32',
+                    processor_speed: 1.6,
+                    cpu_cores: '4',
+                    screen_size: 5.8,
+                    refresh_rate: '60',
+                    display_type: 'IPS LCD',
+                    display_resolution: 'HD+',
+                    rear_camera_mp: 13,
+                    front_camera_mp: 8,
+                    camera_setup: 'Single Camera',
+                    battery_power: 3500,
+                    charging_speed: 10,
+                    wireless_charging: '0',
+                    water_resistance: 'None',
+                    fingerprint_sensor: 'Rear-Mounted',
+                    nfc_support: '0',
+                    audio_jack: '1'
+                },
+                midrange: {
+                    brand_level: '2',
+                    has_5g: '1',
+                    release_year: '2024',
+                    ram: 6,
+                    storage: '128',
+                    processor_speed: 2.2,
+                    cpu_cores: '8',
+                    screen_size: 6.4,
+                    refresh_rate: '90',
+                    display_type: 'AMOLED',
+                    display_resolution: 'Full HD+',
+                    rear_camera_mp: 50,
+                    front_camera_mp: 16,
+                    camera_setup: 'Triple Camera',
+                    battery_power: 5000,
+                    charging_speed: 33,
+                    wireless_charging: '0',
+                    water_resistance: 'IP53',
+                    fingerprint_sensor: 'Side-Mounted',
+                    nfc_support: '1',
+                    audio_jack: '1'
+                },
+                premium: {
+                    brand_level: '3',
+                    has_5g: '1',
+                    release_year: '2025',
+                    ram: 10,
+                    storage: '256',
+                    processor_speed: 2.9,
+                    cpu_cores: '8',
+                    screen_size: 6.6,
+                    refresh_rate: '120',
+                    display_type: 'AMOLED',
+                    display_resolution: 'Full HD+',
+                    rear_camera_mp: 108,
+                    front_camera_mp: 32,
+                    camera_setup: 'Triple Camera',
+                    battery_power: 5200,
+                    charging_speed: 67,
+                    wireless_charging: '1',
+                    water_resistance: 'IP67',
+                    fingerprint_sensor: 'Under-Display',
+                    nfc_support: '1',
+                    audio_jack: '0'
+                },
+                flagship: {
+                    brand_level: '3',
+                    has_5g: '1',
+                    release_year: '2026',
+                    ram: 16,
+                    storage: '512',
+                    processor_speed: 3.4,
+                    cpu_cores: '8',
+                    screen_size: 6.8,
+                    refresh_rate: '144',
+                    display_type: 'OLED',
+                    display_resolution: 'Quad HD+',
+                    rear_camera_mp: 200,
+                    front_camera_mp: 40,
+                    camera_setup: 'Quad Camera',
+                    battery_power: 5500,
+                    charging_speed: 120,
+                    wireless_charging: '1',
+                    water_resistance: 'IP68',
+                    fingerprint_sensor: 'Under-Display',
+                    nfc_support: '1',
+                    audio_jack: '0'
+                }
+            };
+
+            const p = presets[type];
+            if (!p) return;
+
+            document.getElementById('brand_level').value = p.brand_level;
+            document.getElementById('has_5g').value = p.has_5g;
+            document.getElementById('release_year').value = p.release_year;
+            document.getElementById('ram').value = p.ram;
+            document.getElementById('storage').value = p.storage;
+            document.getElementById('processor_speed').value = p.processor_speed;
+            document.getElementById('cpu_cores').value = p.cpu_cores;
+            document.getElementById('screen_size').value = p.screen_size;
+            document.getElementById('refresh_rate').value = p.refresh_rate;
+            document.getElementById('display_type').value = p.display_type;
+            document.getElementById('display_resolution').value = p.display_resolution;
+            document.getElementById('rear_camera_mp').value = p.rear_camera_mp;
+            document.getElementById('front_camera_mp').value = p.front_camera_mp;
+            document.getElementById('camera_setup').value = p.camera_setup;
+            document.getElementById('battery_power').value = p.battery_power;
+            document.getElementById('charging_speed').value = p.charging_speed;
+            document.getElementById('wireless_charging').value = p.wireless_charging;
+            document.getElementById('water_resistance').value = p.water_resistance;
+            document.getElementById('fingerprint_sensor').value = p.fingerprint_sensor;
+            document.getElementById('nfc_support').value = p.nfc_support;
+            document.getElementById('audio_jack').value = p.audio_jack;
+        }
+    </script>
+</body>
+</html>

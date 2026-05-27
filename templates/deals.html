@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--
+============================================================
+  DEALS & REFURBISHED - Mobile Price Prediction System
+============================================================
+  Displays current best deals and refurbished pricing for
+  popular devices, with dynamic client-side filtering.
+============================================================
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Best new deals and refurbished rates for different available smartphones.">
+    <title>Deals &amp; Refurbished | Mobile Price System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ===== NAVIGATION BAR ===== -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="fas fa-mobile-alt me-2"></i>PricePredict AI</a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+                <i class="fas fa-bars" style="color: var(--text-primary);"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav ms-auto me-3">
+                    <li class="nav-item"><a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/predict"><i class="fas fa-search-dollar me-1"></i> Predict</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/dashboard"><i class="fas fa-chart-pie me-1"></i> Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="/deals"><i class="fas fa-tags me-1"></i> Deals &amp; Refurbished</a></li>
+                </ul>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== DEALS SECTION ===== -->
+    <section class="dashboard-section">
+        <div class="container">
+            
+            <!-- Page Header -->
+            <div class="section-title fade-in-up text-center mb-5">
+                <h2 class="hero-title"><span class="gradient-text">Deals &amp; Refurbished Finder</span></h2>
+                <p class="hero-subtitle">Browse the best retail rates for brand new models side-by-side with verified refurbished rates from top recyclers.</p>
+            </div>
+
+            <!-- Dynamic Filter Controls -->
+            <div class="card-custom mb-5 fade-in-up delay-1 p-4">
+                <div class="row g-4">
+                    <!-- Brand Filter -->
+                    <div class="col-md-6 text-start">
+                        <label class="form-label-custom mb-2"><i class="fas fa-industry me-1 text-muted"></i> Filter by Brand</label>
+                        <div class="d-flex flex-wrap gap-2" id="brandFilters">
+                            <button class="btn btn-sm btn-filter active" data-filter-brand="all">All Brands</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Apple">Apple</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Samsung">Samsung</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="OnePlus">OnePlus</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Xiaomi/Redmi">Redmi</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Realme">Realme</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Motorola">Motorola</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Nothing">Nothing</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Google">Google</button>
+                            <button class="btn btn-sm btn-filter" data-filter-brand="Poco">Poco</button>
+                        </div>
+                    </div>
+                    <!-- Price Category Filter -->
+                    <div class="col-md-6 text-start">
+                        <label class="form-label-custom mb-2"><i class="fas fa-tags me-1 text-muted"></i> Filter by Price Category</label>
+                        <div class="d-flex flex-wrap gap-2" id="tierFilters">
+                            <button class="btn btn-sm btn-filter active" data-filter-tier="all">All Tiers</button>
+                            <button class="btn btn-sm btn-filter" data-filter-tier="Budget Phone">Budget</button>
+                            <button class="btn btn-sm btn-filter" data-filter-tier="Mid-Range Phone">Mid-Range</button>
+                            <button class="btn btn-sm btn-filter" data-filter-tier="Premium Phone">Premium</button>
+                            <button class="btn btn-sm btn-filter" data-filter-tier="Flagship Phone">Flagship</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Device Listings Grid -->
+            <div class="row g-4" id="devicesGrid">
+                {% for device in devices %}
+                <div class="col-lg-4 col-md-6 device-card-wrapper fade-in-up" 
+                     data-brand="{{ device.brand }}" 
+                     data-tier="{{ device.category }}">
+                    
+                    <div class="card-custom h-100 d-flex flex-column p-4 justify-content-between">
+                        
+                        <div>
+                            <!-- Category Badge -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                {% if device.category == 'Budget Phone' %}
+                                <span class="badge-custom bg-cat-budget cat-budget" style="color: #10b981 !important; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1) !important;">Budget</span>
+                                {% elif device.category == 'Mid-Range Phone' %}
+                                <span class="badge-custom bg-cat-midrange cat-midrange" style="color: #3b82f6 !important; border: 1px solid rgba(59,130,246,0.3); background: rgba(59,130,246,0.1) !important;">Mid-Range</span>
+                                {% elif device.category == 'Premium Phone' %}
+                                <span class="badge-custom bg-cat-premium cat-premium" style="color: #a855f7 !important; border: 1px solid rgba(168,85,247,0.3); background: rgba(168,85,247,0.1) !important;">Premium</span>
+                                {% else %}
+                                <span class="badge-custom bg-cat-flagship cat-flagship" style="color: #f59e0b !important; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.1) !important;">Flagship</span>
+                                {% endif %}
+                                
+                                <span class="text-muted-custom" style="font-size:0.8rem; font-weight: 500;">
+                                    <i class="fas fa-tag me-1"></i>{{ device.brand }}
+                                </span>
+                            </div>
+
+                            <!-- Title -->
+                            <h5 class="mb-1 text-start" style="font-weight:700; color:var(--text-primary);">{{ device.name }}</h5>
+                            <p class="text-muted-custom text-start mb-4" style="font-size:0.85rem; min-height: 40px;">
+                                <i class="fas fa-info-circle me-1" style="font-size:0.8rem;"></i> {{ device.specs }}
+                            </p>
+
+                            <!-- Pricing Dual Block -->
+                            <div class="row g-2 mb-3">
+                                <!-- New Price -->
+                                <div class="col-6">
+                                    <div class="pricing-subcard p-3 text-center">
+                                        <div class="pricing-label text-muted-custom">Brand New</div>
+                                        <div class="pricing-value my-1">{{ device.new_price }}</div>
+                                        <div class="pricing-vendor">via {{ device.new_site }}</div>
+                                    </div>
+                                </div>
+                                <!-- Refurbished Price -->
+                                <div class="col-6">
+                                    <div class="pricing-subcard p-3 text-center position-relative overflow-hidden">
+                                        <span class="refurb-grade-badge">{{ device.condition }}</span>
+                                        <div class="pricing-label text-muted-custom mt-2">Refurbished</div>
+                                        <div class="pricing-value my-1 text-success-custom" style="color:#10b981; font-weight:700;">{{ device.refurb_price }}</div>
+                                        <div class="pricing-vendor">via {{ device.refurb_site }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CTA Shopping Buttons -->
+                        <div class="d-flex gap-2 mt-2">
+                            {% if 'amazon' in device.new_site|lower %}
+                            <a href="{{ device.new_link }}" target="_blank" class="btn btn-sm btn-outline-custom flex-grow-1 deal-btn-amazon text-center" style="font-size: 0.8rem; padding: 8px 0;">
+                                <i class="fab fa-amazon me-1"></i>Buy New
+                            </a>
+                            {% else %}
+                            <a href="{{ device.new_link }}" target="_blank" class="btn btn-sm btn-outline-custom flex-grow-1 deal-btn-flipkart text-center" style="font-size: 0.8rem; padding: 8px 0;">
+                                <i class="fas fa-shopping-bag me-1"></i>Buy New
+                            </a>
+                            {% endif %}
+                            
+                            <a href="{{ device.refurb_link }}" target="_blank" class="btn btn-sm btn-success-refurb flex-grow-1 text-center" style="font-size: 0.8rem; padding: 8px 0; font-weight: 600; border-radius:50px;">
+                                <i class="fas fa-sync-alt me-1"></i>Buy Refurbished
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- No Results State -->
+            <div class="text-center py-5 d-none" id="noResultsState">
+                <i class="fas fa-search-minus fa-3x text-muted mb-3"></i>
+                <h5>No Phones Match Selected Filters</h5>
+                <p class="text-muted-custom">Try combination of other brands or price ranges.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer-custom">
+        <div class="container">
+            <p class="mb-1"><i class="fas fa-mobile-alt me-1"></i><strong>Mobile Price Prediction System</strong> — BCA Mini Project</p>
+            <p class="mb-0">Built with <i class="fas fa-heart" style="color: #ef4444;"></i> using Python, Flask &amp; Fuzzy Logic</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Client-side filter script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const brandFilters = document.querySelectorAll('#brandFilters [data-filter-brand]');
+            const tierFilters = document.querySelectorAll('#tierFilters [data-filter-tier]');
+            const wrappers = document.querySelectorAll('.device-card-wrapper');
+            const noResults = document.getElementById('noResultsState');
+
+            let selectedBrand = 'all';
+            let selectedTier = 'all';
+
+            function filterGrid() {
+                let matches = 0;
+                wrappers.forEach(w => {
+                    const brand = w.dataset.brand;
+                    const tier = w.dataset.tier;
+                    const brandMatch = (selectedBrand === 'all' || brand === selectedBrand);
+                    const tierMatch = (selectedTier === 'all' || tier === selectedTier);
+
+                    if (brandMatch && tierMatch) {
+                        w.classList.remove('d-none');
+                        // Trigger fade-in animation again
+                        w.style.animation = 'none';
+                        w.offsetHeight; // Trigger reflow
+                        w.style.animation = '';
+                        matches++;
+                    } else {
+                        w.classList.add('d-none');
+                    }
+                });
+
+                if (matches === 0) {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
+                }
+            }
+
+            brandFilters.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    brandFilters.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedBrand = btn.dataset.filterBrand;
+                    filterGrid();
+                });
+            });
+
+            tierFilters.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tierFilters.forEach(t => t.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedTier = btn.dataset.filterTier;
+                    filterGrid();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
